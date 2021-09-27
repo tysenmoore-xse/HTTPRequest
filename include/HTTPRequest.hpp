@@ -656,7 +656,7 @@ namespace http
                             if (colonPosition == std::string::npos)
                                 throw ResponseError("Invalid header: " + line);
 
-                            const auto headerName = line.substr(0, colonPosition);
+                            auto headerName = line.substr(0, colonPosition);
                             auto headerValue = line.substr(colonPosition + 1);
 
                             // RFC 7230, Appendix B. Collected ABNF
@@ -664,19 +664,23 @@ namespace http
                                 return c != ' ' && c != '\t';
                             };
 
+                            // Change headerName to lower case string
+                            std::transform(headerName.begin(), headerName.end(), headerName.begin(),
+                                           [](unsigned char c){ return std::tolower(c); });
+
                             // ltrim
                             headerValue.erase(headerValue.begin(), std::find_if(headerValue.begin(), headerValue.end(), isNotWhitespace));
 
                             // rtrim
                             headerValue.erase(std::find_if(headerValue.rbegin(), headerValue.rend(), isNotWhitespace).base(), headerValue.end());
 
-                            if (headerName == "Content-Length")
+                            if (headerName == "content-length")
                             {
                                 contentLength = std::stoul(headerValue);
                                 contentLengthReceived = true;
                                 response.body.reserve(contentLength);
                             }
-                            else if (headerName == "Transfer-Encoding")
+                            else if (headerName == "transfer-encoding")
                             {
                                 if (headerValue == "chunked")
                                     chunkedResponse = true;
